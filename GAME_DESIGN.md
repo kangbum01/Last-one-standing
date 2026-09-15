@@ -177,3 +177,4 @@ M2부터는 서버/클라이언트를 병렬로 진행할 수 있으니, 그날�
 
 - **9/13**: 기획/프로토콜 확정(증강 시스템, 패킷 ID, 3라운드). 프로젝트 폴더 구조 생성. 서버 솔루션(GameServer.sln, Server.App/Network/Game/Shared) 스캐폴드 — 구조/시그니처만, 구현은 TODO. 목업 클라이언트(`Tools/mock_client.py`) 준비.
 - **9/14**: 클라이언트 네트워크 레이어 구현 — `Client/Assets/_Project/Scripts/Network/`에 `PacketIds.cs`, `PacketFramer.cs`, `NetworkClient.cs` 작성 완료(서버와 동일한 패킷 포맷, 백그라운드 스레드 읽기 + 메인 스레드 디스패치). 서버 측은 `PacketFramer.cs` 등 구현 예정.
+- **9/15**: 서버 솔루션 재구성(`GameServer.slnx` + 4개 프로젝트, .NET 8 기준) 및 `Server.Network/PacketFramer.cs` 완성 — `Encode`(빅엔디안 직렬화), `ReadExactAsync`(TCP 부분 수신 대응 반복 읽기), `ReadPacketAsync`(헤더 파싱 → body 길이만큼 재수신 → `(PacketId, byte[] body)` 복원)까지 전부 구현 및 검증 완료. `mock_client.py`로 보낸 JOIN_LOBBY 패킷 바이트를 직접 디코딩해서 확인. 프로젝트 루트에 `.gitignore` 추가(Unity/.NET 빌드 산출물 제외) 후 Git 로컬 저장소 초기화 진행 — `Server` 폴더 안에 끼어있던 중첩 `.git` 제거 등 트러블슈팅 거쳐 첫 커밋 준비 완료.
