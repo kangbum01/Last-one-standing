@@ -1,0 +1,34 @@
+# ===== .NET (Server) =====
+Server/**/bin/
+Server/**/obj/
+*.user
+
+# ===== Unity (Client) =====
+Client/Library/
+Client/Temp/
+Client/Obj/
+Client/Build/
+Client/Builds/
+Client/Logs/
+Client/UserSettings/
+Client/MemoryCaptures/
+Client/*.csproj
+Client/*.sln
+Client/.vs/
+Client/*.pidb
+Client/*.booproj
+Client/*.svd
+Client/*.pdb
+Client/*.mdb
+Client/*.opendb
+Client/*.VC.db
+Client/sysinfo.txt
+Client/crashlytics-build.txt
+Client/[Aa]ssets/AssetStoreTools*
+
+# ===== OS / 에디터 =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

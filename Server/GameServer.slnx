@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Server.App/Server.App.csproj" />
+  <Project Path="Server.Game/Server.Game.csproj" />
+  <Project Path="Server.Network/Server.Network.csproj" />
+  <Project Path="Server.Shared/Server.Shared.csproj" />
+</Solution>
