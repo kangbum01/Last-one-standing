@@ -156,7 +156,7 @@ Unity 클라이언트가 준비되기 전에도 서버 로직을 테스트할 �
 
 | 마일스톤 | 대략 세션 수(1h 기준) | 서버(범석님) | 클라이언트(Claude) |
 |---|---|---|---|
-| M1. 셋업 & 스펙 확정 | 1세션 | 프로젝트 구조 셋업, 프로토콜 스펙 확정 | Unity 프로젝트 생성, 씬 구성, 프로토콜 스펙 확정 |
+| M1. 셋업 & 스펙 확정 ✅완료 | 1세션 | 프로젝트 구조 셋업, 프로토콜 스펙 확정 | Unity 프로젝트 생성, 씬 구성, 프로토콜 스펙 확정 |
 | M2. 로비/룸 시스템 | 2~3세션 | 룸 매니저 구현 (생성/참가/ready) | 로비 UI + 방 생성/참가 화면 |
 | M3. 실시간 이동 동기화 | 2~3세션 | tick 루프, 위치 브로드캐스트 | 이동 입력 전송 + 위치 보간(interpolation) |
 | M4. 전투 로직 | 2세션 | 공격 판정/데미지 처리 | 공격 애니메이션/이펙트, 체력 UI |
@@ -178,3 +178,4 @@ M2부터는 서버/클라이언트를 병렬로 진행할 수 있으니, 그날�
 - **9/13**: 기획/프로토콜 확정(증강 시스템, 패킷 ID, 3라운드). 프로젝트 폴더 구조 생성. 서버 솔루션(GameServer.sln, Server.App/Network/Game/Shared) 스캐폴드 — 구조/시그니처만, 구현은 TODO. 목업 클라이언트(`Tools/mock_client.py`) 준비.
 - **9/14**: 클라이언트 네트워크 레이어 구현 — `Client/Assets/_Project/Scripts/Network/`에 `PacketIds.cs`, `PacketFramer.cs`, `NetworkClient.cs` 작성 완료(서버와 동일한 패킷 포맷, 백그라운드 스레드 읽기 + 메인 스레드 디스패치). 서버 측은 `PacketFramer.cs` 등 구현 예정.
 - **9/15**: 서버 솔루션 재구성(`GameServer.slnx` + 4개 프로젝트, .NET 8 기준) 및 `Server.Network/PacketFramer.cs` 완성 — `Encode`(빅엔디안 직렬화), `ReadExactAsync`(TCP 부분 수신 대응 반복 읽기), `ReadPacketAsync`(헤더 파싱 → body 길이만큼 재수신 → `(PacketId, byte[] body)` 복원)까지 전부 구현 및 검증 완료. `mock_client.py`로 보낸 JOIN_LOBBY 패킷 바이트를 직접 디코딩해서 확인. 프로젝트 루트에 `.gitignore` 추가(Unity/.NET 빌드 산출물 제외) 후 Git 로컬 저장소 초기화 진행 — `Server` 폴더 안에 끼어있던 중첩 `.git` 제거 등 트러블슈팅 거쳐 첫 커밋 준비 완료.
+- **9/16**: `Server.Network/ClientConnection.cs`(`SendAsync`, `RunReceiveLoopAsync`) 및 `Server.Network/TcpServer.cs`(`TcpListener` 기반 accept 루프, fire-and-forget으로 다중 클라이언트 처리) 구현 완료. `Server.Game/PacketHandlers.cs`에서 `JOIN_LOBBY` 수신 시 JSON 파싱(닉네임 추출) 후 `LOBBY_JOINED`(playerId, rooms) 응답까지 구현. `Program.cs`에서 전체 조립 후 `mock_client.py`로 **엔드투엔드 테스트 성공** — 요청/응답 왕복 정상 확인. **M1(셋업 & 스펙 확정) 완료.**

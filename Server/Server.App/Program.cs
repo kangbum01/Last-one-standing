@@ -1,5 +1,14 @@
 ﻿using Server.Network;
-using Server.Shared;
+using Server.Game;
 
-byte[] packet = new PacketFramer().Encode(PacketId.JoinLobby, "{\"nickname\":\"범석\"}");
-Console.WriteLine(string.Join(" ", packet.Select(b => b.ToString("X2"))));
+const int port = 9000;
+
+var packetHandlers = new PacketHandlers();
+
+var server = new TcpServer(port);
+server.OnPacketReceived = packetHandlers.Handle;
+
+Console.WriteLine($"서버 시작 중... (port={port})");
+await server.StartAsync();
+
+
