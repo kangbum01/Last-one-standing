@@ -3,7 +3,9 @@ using Server.Game;
 
 const int port = 9000;
 
-var packetHandlers = new PacketHandlers();
+var roomManager = new RoomManager();
+
+var packetHandlers = new PacketHandlers(roomManager);
 
 var server = new TcpServer(port);
 server.OnPacketReceived = packetHandlers.Handle;
