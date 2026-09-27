@@ -34,7 +34,7 @@ public class ClientConnection
     }
 
     // 패킷 받기
-    public async Task RunReceiveLoopAsync(Action<ClientConnection, PacketId, byte[]> onPacketReceive)
+    public async Task RunReceiveLoopAsync(Action<ClientConnection, PacketId, byte[]> onPacketReceive, Action<ClientConnection> onDisconnected)
     {
         while (true)
         {
@@ -56,5 +56,6 @@ public class ClientConnection
                 break;
             }
         }
+        onDisconnected(this);
     }
 }

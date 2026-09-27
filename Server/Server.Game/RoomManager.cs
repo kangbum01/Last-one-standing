@@ -54,4 +54,16 @@ public class RoomManager
         return player;
     }
 
+    public Room LeaveRoom(Player player)
+    {
+        Room room = player.CurrentRoom;
+        if(room == null)
+        {
+            return null;
+        }
+        _ = room.Players.Remove(player);
+        player.CurrentRoom = null;
+        return room;
+    }
+
 }

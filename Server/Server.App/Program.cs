@@ -9,6 +9,7 @@ var packetHandlers = new PacketHandlers(roomManager);
 
 var server = new TcpServer(port);
 server.OnPacketReceived = packetHandlers.Handle;
+server.onDisconnected = packetHandlers.HandleDisconnect;
 
 Console.WriteLine($"서버 시작 중... (port={port})");
 await server.StartAsync();

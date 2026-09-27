@@ -40,6 +40,13 @@ public class PacketHandlers
                 _ = HandleJoinRoom(conn, body);
                 break;
             }
+            case PacketId.Ready:
+            {
+                _ = HandleReady(conn, body);
+                break;
+            }
+
+            
         }
     }
 
@@ -53,14 +60,7 @@ public class PacketHandlers
         {
             return;
         }
-        var response = new
-        {
-            roomId = room.RoomId,
-            roomName = room.RoomName,
-            players = room.Players.Select(p => new {playerId = p.PlayerId, nickname = p.Nickname}) 
-        };
-        string responseJson = JsonSerializer.Serialize(response);
-        await conn.SendAsync(PacketId.RoomState, responseJson);
+        await BroadcastRoomState(room);
     }
 
 
@@ -83,13 +83,52 @@ public class PacketHandlers
         string roomName = root.GetProperty("roomName").GetString();
         Room room = _roomManager.CreateRoom(roomName);
         _ = _roomManager.JoinRoom(player, room.RoomId);
+        await BroadcastRoomState(room);
+    }
+
+    private async Task BroadcastRoomState(Room room)
+    {
         var response = new
         {
-            roomId = room.RoomId,
-            roomName = room.RoomName,
-            players = room.Players.Select(p => new {playerId = p.PlayerId, nickname = p.Nickname}) 
+           roomId = room.RoomId,
+           roomName = room.RoomName,
+           players = room.Players.Select(p => new {playerId = p.PlayerId, nickname = p.Nickname, isReady = p.IsReady})  
         };
         string responseJson = JsonSerializer.Serialize(response);
-        await conn.SendAsync(PacketId.RoomState, responseJson);
+        foreach (Player player in room.Players)
+        {
+            await player.Connection.SendAsync(PacketId.RoomState, responseJson);
+        }
+    }
+
+    private async Task HandleReady(ClientConnection conn, byte[] body)
+    {
+        Player player = _roomManager.GetPlayer(conn);
+        if(player.CurrentRoom == null)
+        {
+            return;
+        }
+        player.IsReady = !player.IsReady;
+        await BroadcastRoomState(player.CurrentRoom);
+    }
+
+    private async Task HandleDisconnectAsync(ClientConnection conn)
+    {
+        Player player = _roomManager.GetPlayer(conn);
+        if (player == null)
+        {
+            return;
+        }
+
+        Room room = _roomManager.LeaveRoom(player);
+        if (room != null)
+        {
+            await BroadcastRoomState(room);
+        }
+    }
+
+    public void HandleDisconnect(ClientConnection conn)
+    {
+        _ = HandleDisconnectAsync(conn);
     }
 }

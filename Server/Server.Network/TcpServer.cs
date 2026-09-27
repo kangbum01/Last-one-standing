@@ -10,6 +10,8 @@ public class TcpServer
     private readonly int _port;
 
     public Action<ClientConnection, PacketId, byte[]> OnPacketReceived;
+
+    public Action<ClientConnection> onDisconnected;
     
     public TcpServer(int port)
     {
@@ -28,7 +30,7 @@ public class TcpServer
             {
                 TcpClient client = await listener.AcceptTcpClientAsync();
                 ClientConnection connection = new ClientConnection(client);
-                _ = connection.RunReceiveLoopAsync(OnPacketReceived);
+                _ = connection.RunReceiveLoopAsync(OnPacketReceived,onDisconnected);
             }
             catch (Exception ex)
             {

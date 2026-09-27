@@ -157,7 +157,7 @@ Unity 클라이언트가 준비되기 전에도 서버 로직을 테스트할 �
 | 마일스톤 | 대략 세션 수(1h 기준) | 서버(범석님) | 클라이언트(Claude) |
 |---|---|---|---|
 | M1. 셋업 & 스펙 확정 ✅완료 | 1세션 | 프로젝트 구조 셋업, 프로토콜 스펙 확정 | Unity 프로젝트 생성, 씬 구성, 프로토콜 스펙 확정 |
-| M2. 로비/룸 시스템 | 2~3세션 | 룸 매니저 구현 (생성/참가/ready) | 로비 UI + 방 생성/참가 화면 |
+| M2. 로비/룸 시스템 ✅완료 | 2~3세션 | 룸 매니저 구현 (생성/참가/ready) | 로비 UI + 방 생성/참가 화면 |
 | M3. 실시간 이동 동기화 | 2~3세션 | tick 루프, 위치 브로드캐스트 | 이동 입력 전송 + 위치 보간(interpolation) |
 | M4. 전투 로직 | 2세션 | 공격 판정/데미지 처리 | 공격 애니메이션/이펙트, 체력 UI |
 | M5. 라운드 구조 & 증강 시스템 | 2~3세션 | 라운드 매니저, 증강 풀/효과 적용 로직 | 시작 스타일/증강 선택 UI, 라운드 결과 화면 |
@@ -189,3 +189,9 @@ M2부터는 서버/클라이언트를 병렬로 진행할 수 있으니, 그날�
   - `HandleJoinRoom` 완성 — `CreateRoom`과 동일한 `ROOM_STATE` 응답 형태(`roomId`, `roomName`, `players`)로 통일. 디버깅 중 두 가지 실수 발견 및 수정: (1) 요청 body에 없는 `roomName` 필드를 파싱하려던 죽은 코드가 실제 요청(스펙상 `roomId`만 전송)에서 `KeyNotFoundException`을 유발 — 삭제. (2) 새로 뺀 `HandleJoinRoom` 메서드를 만들어놓고 `Handle`의 `switch` 쪽 호출부는 예전 inline 코드 그대로 남겨둬서 실제로는 호출조차 안 되고 있었음 — `_ = HandleJoinRoom(conn, body);`로 연결. (참고: fire-and-forget(`_ = ...`)으로 호출한 `async Task`가 첫 `await` 이전에 예외를 던지면 그 예외는 호출자에게 전파되지 않고 버려진 Task 안에 갇혀 아무 흔적 없이 사라진다는 것도 이번에 확인함 — "unobserved task exception".)
   - `mock_client.py`로 서로 다른 두 연결(범석=playerId 1, 범석2=playerId 2)이 `CREATE_ROOM` → `JOIN_ROOM`을 통해 **같은 방에 합류하는 것까지 엔드투엔드 테스트 성공** — `ROOM_STATE`의 `players` 배열에 둘 다 정상적으로 표시됨.
   - 다음 할 일: 지금은 방에 새로 들어온/만든 클라이언트 본인만 `ROOM_STATE`를 받음 — 이미 방에 있던 다른 플레이어들에게도 갱신된 상태를 알려주는 브로드캐스트 방식 설계 및 구현. 그 다음 `READY` 패킷(ready 토글 + 방 전체에 상태 브로드캐스트)까지 하면 M2 완료.
+- **9/26**: `ROOM_STATE` 브로드캐스트 + `READY` 토글 구현으로 M2 마무리.
+  - `PacketHandlers.cs`에 `BroadcastRoomState(Room room)` 공용 메서드 추가 — `response`/`responseJson`을 한 번만 만들고, `room.Players`를 `foreach`로 순회하며 각 `player.Connection.SendAsync(...)`로 방 안 전원에게 동일한 `ROOM_STATE`를 전송. `HandleCreateRoom`/`HandleJoinRoom`의 중복되던 응답 코드를 이 메서드 호출로 통합 — 이제 방에 새로 들어온 사람뿐 아니라 이미 있던 사람들도 실시간으로 갱신된 상태(멤버 목록)를 받음.
+  - `players` projection에 `isReady = p.IsReady` 추가 — 스펙(`ROOM_STATE`: "각자 ready 상태")을 실제로 반영.
+  - `HandleReady` 구현 — `Player.CurrentRoom`을 처음으로 실사용(어느 방에 브로드캐스트할지 판단). 처음엔 `player.IsReady = !<요청으로 받은 값>`으로 잘못 작성해서 "클라이언트가 보낸 값을 뒤집는" 버그였음 — 요청 값이 아니라 서버가 들고 있는 현재 상태 자체(`player.IsReady = !player.IsReady`)를 뒤집어야 진짜 토글이 된다는 점을 짚고 수정. `READY`는 payload 없이 패킷 자체가 신호이므로 body 파싱 로직 제거.
+  - `mock_client.py`로 두 플레이어가 같은 방에서 서로 `READY`를 여러 번 주고받는 시나리오까지 **엔드투엔드 테스트 성공** — 한쪽이 `READY`를 보낼 때마다 방 안 전원에게 갱신된 `isReady` 상태가 정상적으로 브로드캐스트됨(토글도 정상 작동).
+  - **M2(로비/룸 시스템) 완료.** 다음: M3(실시간 이동 동기화) — tick 루프, 위치 브로드캐스트.
